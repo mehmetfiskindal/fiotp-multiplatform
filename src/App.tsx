@@ -25,6 +25,11 @@ function safeCopy(text: string): void {
 const AUTO_LOCK_MS = 5 * 60 * 1000 // 5 minutes inactivity
 
 function vaultLocationLabel(): string {
+  if (platformHost.platform === 'android') {
+    if (!vaultStore.hasVault) return 'Bu Android cihazda henüz kasa yok'
+    if (vaultStore.vaultPath.startsWith('content:')) return 'Dosyalardan seçilen kasa'
+    return 'Bu Android cihazda FiOTP uygulama alanı · kasa.json'
+  }
   if (platformHost.platform === 'ios') {
     if (!vaultStore.hasVault) return 'Bu iPhone’da henüz kasa yok'
     const selectedPath = vaultStore.vaultPath
@@ -39,6 +44,12 @@ function vaultLocationLabel(): string {
 
 function unlockErrorMessage(error: unknown): string {
   const message = (error as Error).message
+  if (platformHost.platform === 'android') {
+    if (/couldn.t be opened|no such file|does not exist|açılamadı/i.test(message)) {
+      return 'Bu Android cihazdaki varsayılan kasa bulunamadı. “Var Olan Kasayı Aç…” ile şifreli kasa .json dosyanızı seçin.'
+    }
+    return message
+  }
   // iOS container paths are long, change between installs, and are not
   // navigable in Files. Keep the actionable error without flooding the view.
   if (platformHost.platform === 'ios') {
@@ -528,7 +539,7 @@ export class App extends ReactiveComponent {
 
     return (
       <div
-        class={`app-switch-root ${platformHost.platform === 'ios' ? 'ios-layout' : platformHost.platform === 'linux' ? 'linux-layout' : platformHost.platform === 'windows' ? 'windows-layout' : 'macos-layout'}`}
+        class={`app-switch-root ${platformHost.platform === 'ios' || platformHost.platform === 'android' ? 'ios-layout' : platformHost.platform === 'linux' ? 'linux-layout' : platformHost.platform === 'windows' ? 'windows-layout' : 'macos-layout'}`}
         data-account-count={vaultStore.totalCount}
       >
         <div class="app-stage" style={{ display: vaultStore.phase === 'unlocked' ? 'none' : 'flex' }}>
@@ -536,7 +547,7 @@ export class App extends ReactiveComponent {
             hasVault={vaultStore.hasVault}
             vaultLocation={vaultLocationLabel()}
             error={vaultStore.error}
-            isIOS={platformHost.platform === 'ios'}
+            isIOS={platformHost.platform === 'ios' || platformHost.platform === 'android'}
             creatingVault={uiStore.creatingVault}
             resetToken={uiStore.passwordResetToken}
             busy={vaultStore.phase === 'opening'}

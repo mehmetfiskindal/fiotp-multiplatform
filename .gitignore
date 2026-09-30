@@ -17,6 +17,4 @@ kasa.json.bak
 .notarytool/
 
 # Native Android build output
-android/.gradle/
-android/app/build/
-android/local.properties
+.gea-android/

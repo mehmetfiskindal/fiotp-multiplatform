@@ -4,16 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs",
+    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs && node patches/geastack-android-build.mjs",
     "check": "tsc --noEmit",
-    "test": "node --experimental-strip-types tests/otp.test.ts && npx tsx tests/pagination.test.ts && sh scripts/test-native.sh",
+    "test": "node --experimental-strip-types tests/otp.test.ts && npx tsx tests/pagination.test.ts && sh scripts/test-native.sh && sh scripts/test-android-host.sh",
     "dev": "gea dev",
     "build": "gea build --target web",
     "build:macos": "gea build --target macos",
     "build:ios": "node_modules/@geastack/apple/targets/ios/build-ios.sh fiotp-gea simulator && node scripts/ios-postbuild.mjs",
     "build:ios:device": "node_modules/@geastack/apple/targets/ios/build-ios.sh fiotp-gea device && node scripts/ios-postbuild.mjs",
-    "build:android": "cd android && ./gradlew assembleDebug",
-    "test:android": "cd android && ./gradlew testDebugUnitTest",
+    "build:android": "bash scripts/build-android.sh",
     "build:linux": "bash scripts/build-linux.sh",
     "build:windows": "gea build --target windows",
     "run:windows": "gea run --target windows"
@@ -26,6 +25,7 @@
     "@geastack/targets": "^0.1.77"
   },
   "devDependencies": {
+    "@geastack/android": "github:geastack/android#bdc956af1212448526ba9d92f7666e20a745bc51",
     "@geastack/linux": "^0.1.0",
     "@geastack/windows": "^0.1.0",
     "typescript": "latest",
@@ -45,7 +45,7 @@
       "macos": true,
       "ios": true,
       "raspberry-pi-os": true,
-      "android": false,
+      "android": true,
       "windows": true
     },
     "nativeSources": [

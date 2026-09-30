@@ -1,4 +1,4 @@
-export type Platform = 'macos' | 'ios' | 'linux' | 'windows' | 'web'
+export type Platform = 'macos' | 'ios' | 'linux' | 'windows' | 'android' | 'web'
 
 declare function fiotpHostInvoke(method: string, payload: string): string
 
@@ -38,7 +38,7 @@ export class PlatformHost {
   }
 
   invokeAsync(method: string, payload: Record<string, unknown>, onSuccess: UiSuccess, onFailure: UiFailure): void {
-    if (this.platform !== 'ios') {
+    if (this.platform !== 'ios' && this.platform !== 'android') {
       try {
         onSuccess(this.invoke(method, payload))
       } catch (error) {
@@ -50,7 +50,7 @@ export class PlatformHost {
     try {
       const started = parse(this.invoke('ui.start', { method, payload: JSON.stringify(payload) }))
       const id = started.data?.id
-      if (!id) throw new Error('iOS işlem kimliği alınamadı.')
+      if (!id) throw new Error('Arayüz işlem kimliği alınamadı.')
       const poll = () => {
         try {
           const result = parse(this.invoke('ui.poll', { id }))
@@ -58,7 +58,7 @@ export class PlatformHost {
             setTimeout(poll, 100)
             return
           }
-          if (!result.data?.response) throw new Error('iOS işlemi sonuç döndürmedi.')
+          if (!result.data?.response) throw new Error('Arayüz işlemi sonuç döndürmedi.')
           parse(result.data.response)
           onSuccess(result.data.response)
         } catch (error) {
