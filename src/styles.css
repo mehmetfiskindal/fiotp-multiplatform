@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: 'Inter';
-  src: url('../assets/fonts/Inter-Regular.ttf');
+  src: url('../assets/fonts/OpenSans-Regular.ttf');
 }
 
 /* ==========================================
@@ -1741,4 +1741,10 @@ html, body {
   .unlock-wrapper .unlock-box { width: 100%; max-width: 440px; padding: 22px 18px; }
   .unlock-box .input-submit-wrap { flex-direction: column; }
   .input-submit-wrap > button { width: 100%; min-height: 44px; }
+  .unlock-actions-row, .create-vault-actions { flex-direction: column; width: 100%; }
+  .unlock-actions-row > button, .create-vault-actions > button { width: 100%; min-height: 44px; }
+  .create-vault-panel .create-password-input { width: auto; align-self: stretch; }
+  .create-vault-actions > button { flex: none; }
+  .vault-info-col { min-width: 0; }
+  .vault-info-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }

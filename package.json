@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs",
+    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs && node patches/geastack-sailfish-build.mjs",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types tests/otp.test.ts && npx tsx tests/pagination.test.ts && sh scripts/test-native.sh",
     "dev": "gea dev",
@@ -15,6 +15,7 @@
     "build:android": "cd android && ./gradlew assembleDebug",
     "test:android": "cd android && ./gradlew testDebugUnitTest",
     "build:linux": "bash scripts/build-linux.sh",
+    "build:sailfish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-sailfish.ps1",
     "build:windows": "gea build --target windows",
     "run:windows": "gea run --target windows"
   },
@@ -26,7 +27,8 @@
     "@geastack/targets": "^0.1.77"
   },
   "devDependencies": {
-    "@geastack/linux": "^0.1.0",
+    "@geajs/vite-plugin": "^1.4.1",
+    "@geastack/linux": "^0.1.1",
     "@geastack/windows": "^0.1.0",
     "typescript": "latest",
     "vite": "latest"
@@ -52,6 +54,15 @@
       "native/fiotp_host.mm",
       "native/fiotp_host_windows.cpp"
     ],
+    "icons": {
+      "512": "icons/icon-source.png"
+    },
+    "sailfish": {
+      "organizationName": "com.fiskindal",
+      "applicationName": "fiotp",
+      "permissions": [],
+      "devicePixelRatio": 2
+    },
     "ota": {
       "ble": true
     }

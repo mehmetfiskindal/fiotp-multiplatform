@@ -54,13 +54,21 @@ std::string homeDirectory() {
 std::string defaultVaultPath() {
   const char *xdg = std::getenv("XDG_DATA_HOME");
   fs::path root = xdg && *xdg ? fs::path(xdg) : fs::path(homeDirectory()) / ".local" / "share";
+#ifdef FIOTP_SAILFISH
+  return (root / "com.fiskindal" / "fiotp" / "kasa.json").string();
+#else
   return (root / "fiotp" / "kasa.json").string();
+#endif
 }
 
 std::string settingsPath() {
   const char *xdg = std::getenv("XDG_CONFIG_HOME");
   fs::path root = xdg && *xdg ? fs::path(xdg) : fs::path(homeDirectory()) / ".config";
+#ifdef FIOTP_SAILFISH
+  return (root / "com.fiskindal" / "fiotp" / "settings.json").string();
+#else
   return (root / "fiotp" / "settings.json").string();
+#endif
 }
 
 std::string expandPath(std::string path) {
@@ -311,6 +319,13 @@ void savePlaintext(const std::string &path, const std::string &plaintext, const 
 }
 
 std::optional<std::string> choosePath(bool save, const std::string &title, const std::string &defaultName) {
+#ifdef FIOTP_SAILFISH
+  (void)title;
+  (void)defaultName;
+  const std::string path = defaultVaultPath();
+  if (save || fs::exists(path)) return path;
+  throw std::runtime_error("Sailfish üzerinde kasa dosyasını uygulama veri klasörüne kopyalayın: " + path);
+#else
   int pipeFd[2];
   if (pipe(pipeFd) != 0) throw std::runtime_error("Dosya seçici başlatılamadı.");
   std::vector<std::string> args = {"zenity", "--file-selection", "--title", title,
@@ -355,6 +370,7 @@ std::optional<std::string> choosePath(bool save, const std::string &title, const
   while (!selected.empty() && (selected.back() == '\n' || selected.back() == '\r')) selected.pop_back();
   if (selected.empty()) return std::nullopt;
   return selected;
+#endif
 }
 
 void clearVaultKey() {

@@ -2,6 +2,7 @@ node_modules/
 dist/
 .gea/build/
 .gea-linux/
+.gea-sailfish/
 .env
 *.p12
 *.cer

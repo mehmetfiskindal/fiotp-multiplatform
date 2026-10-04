@@ -35,7 +35,7 @@ export default class UnlockView extends ReactiveComponent<GeaElement, UnlockView
     return (
     <div class="unlock-wrapper">
       <div class="unlock-box">
-        <div class="unlock-badge">🛡️</div>
+        <div class="unlock-badge">F</div>
         <div class="unlock-heading">FiOTP</div>
         <div class="unlock-sub">Yerel, şifreli 2FA kasası</div>
 

@@ -9,6 +9,7 @@ The application is built with [GeaStack](https://www.npmjs.com/package/@geastack
 - Node.js and npm
 - Xcode Command Line Tools (`xcode-select --install`) for Apple builds
 - Raspberry Pi OS Bookworm or newer and the native dependencies listed in [LINUX.md](LINUX.md) for Linux builds
+- Sailfish OS 5.1 SDK with an aarch64 target for [Sailfish builds](SAILFISH.md)
 - Windows 10/11, Visual Studio Build Tools with the MSVC C++ toolset and Windows SDK, plus LLVM `clang-cl` and `lld-link` for Windows builds
 - JDK 17 or newer and Android SDK Platform 36 for Android builds
 
@@ -33,6 +34,7 @@ npm run build:macos  # Build the macOS application
 npm run build:windows  # Build the Windows application
 npm run run:windows   # Build and launch the Windows application
 npm run build:android # Build the Android debug APK
+npm run build:sailfish # Build the Sailfish OS aarch64 RPM on Windows
 npm run test:android  # Run Kotlin unit tests
 ```
 
