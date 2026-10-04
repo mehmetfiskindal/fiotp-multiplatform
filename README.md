@@ -33,13 +33,8 @@ npx gea inspect --json
 npm run build:macos  # Build the macOS application
 npm run build:windows  # Build the Windows application
 npm run run:windows   # Build and launch the Windows application
-<<<<<<< HEAD
-npm run build:android # Build the Android debug APK
-npm run build:sailfish # Build the Sailfish OS aarch64 RPM on Windows
-npm run test:android  # Run Kotlin unit tests
-=======
 npm run build:android # Build the native Android debug APK
->>>>>>> 03e712a13f7c062c829bba3adf38ae72528957c8
+npm run build:sailfish # Build the Sailfish OS aarch64 RPM on Windows
 ```
 
 The macOS application is generated at `dist/macos/fiotp-gea/FiOTP.app` and can be launched with:

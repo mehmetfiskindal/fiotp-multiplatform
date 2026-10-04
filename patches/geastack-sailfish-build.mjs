@@ -191,6 +191,31 @@ patch(`${root}/main/sailfish_display.cpp`, [
 // scale normalized finger coordinates again when logical size is enabled.
 int window_flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;`,
   ],
+  [
+    `extern "C" int sailfish_display_window_scale() { return g_window_scale; }`,
+    `extern "C" int sailfish_display_window_scale() { return g_window_scale; }
+
+// Window size is the compositor surface. Renderer output is the drawable
+// the texture is presented into. Callers turn that into one canvas.
+extern "C" void sailfish_display_read_size(int *window_w, int *window_h, int *output_w, int *output_h)
+{
+	const int scale = g_window_scale > 0 ? g_window_scale : 1;
+	int ww = g_canvas_width * scale;
+	int wh = g_canvas_height * scale;
+	int ow = ww;
+	int oh = wh;
+	if (g_window) SDL_GetWindowSize(g_window, &ww, &wh);
+	if (g_renderer) SDL_GetRendererOutputSize(g_renderer, &ow, &oh);
+	if (ww < 1) ww = ow;
+	if (wh < 1) wh = oh;
+	if (ow < 1) ow = ww;
+	if (oh < 1) oh = wh;
+	if (window_w) *window_w = ww;
+	if (window_h) *window_h = wh;
+	if (output_w) *output_w = ow;
+	if (output_h) *output_h = oh;
+}`,
+  ],
 ])
 
 patch(`${root}/main/sailfish_main.cpp`, [
@@ -226,6 +251,139 @@ patch(`${root}/main/sailfish_main.cpp`, [
     `sailfish_keyboard_update(tree.activeInputId());`,
     `const int focusedInput = tree.activeInputId();
 \t\tsailfish_keyboard_update(focusedInput, focusedInput >= 0 ? tree.getAttribute(focusedInput, "type") : nullptr);`,
+  ],
+  [
+    `extern "C" int sailfish_display_resize(int new_width, int new_height);`,
+    `extern "C" int sailfish_display_resize(int new_width, int new_height);
+extern "C" void sailfish_display_read_size(int *window_w, int *window_h, int *output_w, int *output_h);`,
+  ],
+  [
+    `	return GEA_SAILFISH_DEFAULT_DPR;
+}`,
+    `	return GEA_SAILFISH_DEFAULT_DPR;
+}
+
+struct SailfishViewport {
+	int windowW;
+	int windowH;
+	int canvasW;
+	int canvasH;
+	int cssW;
+	int cssH;
+	double dpr;
+	int scale;
+};
+
+int clampCanvas(int value)
+{
+	if (value < 64) return 64;
+	if (value > 4096) return 4096;
+	return value;
+}
+
+void markNodeFullyDirty(gea::embedded::ui::Tree &tree, int nodeId);
+
+// Window pixels, the framebuffer, and the CSS viewport are one conversion.
+// The engine stores the viewport in canvas pixels and multiplies authored px
+// by DPR, so the document root has to be the canvas or the rest stays blank.
+SailfishViewport viewportFromOutput(int outputW, int outputH)
+{
+	const int scale = sailfish_display_window_scale() > 0 ? sailfish_display_window_scale() : 1;
+	const double dpr = devicePixelRatio();
+	const int canvasW = clampCanvas(outputW / scale);
+	const int canvasH = clampCanvas(outputH / scale);
+	const int cssW = (int)(canvasW / dpr + 0.5);
+	const int cssH = (int)(canvasH / dpr + 0.5);
+	SailfishViewport view;
+	view.windowW = outputW;
+	view.windowH = outputH;
+	view.canvasW = canvasW;
+	view.canvasH = canvasH;
+	view.cssW = cssW > 0 ? cssW : 1;
+	view.cssH = cssH > 0 ? cssH : 1;
+	view.dpr = dpr;
+	view.scale = scale;
+	return view;
+}
+
+SailfishViewport readViewport()
+{
+	int windowW = 0, windowH = 0, outputW = 0, outputH = 0;
+	sailfish_display_read_size(&windowW, &windowH, &outputW, &outputH);
+	const int sourceW = outputW > 0 ? outputW : windowW;
+	const int sourceH = outputH > 0 ? outputH : windowH;
+	SailfishViewport view = viewportFromOutput(sourceW, sourceH);
+	view.windowW = windowW > 0 ? windowW : view.canvasW;
+	view.windowH = windowH > 0 ? windowH : view.canvasH;
+	return view;
+}
+
+void publishViewport(const SailfishViewport &view, bool relayout)
+{
+	sailfish_display_resize(view.canvasW, view.canvasH);
+	gea::embedded::ui::setViewportMetrics(view.canvasW, view.canvasH, view.dpr);
+	gea::embedded::ui::Document::setPreferredMountSize(view.canvasW, view.canvasH);
+	if (!relayout) return;
+	auto &tree = gea::embedded::ui::Tree::instance();
+	const int count = tree.nodeCount();
+	for (int id = 0; id < count; ++id) markNodeFullyDirty(tree, id);
+	const int root = tree.mountedRoot();
+	if (root >= 0) {
+		gea::embedded::ui::NodeHandle(root).style().width(view.canvasW);
+		gea::embedded::ui::NodeHandle(root).style().height(view.canvasH);
+	}
+	std::fprintf(stderr, "[sailfish] viewport window=%dx%d canvas=%dx%d css=%dx%d dpr=%.1f\\n",
+	             view.windowW, view.windowH, view.canvasW, view.canvasH, view.cssW, view.cssH, view.dpr);
+}`,
+  ],
+  [
+    `	int w = sailfish_canvas_width();
+	int h = sailfish_canvas_height();
+	const double dpr = devicePixelRatio();
+
+	std::fprintf(stderr, "[sailfish] init %dx%d dpr=%.1f app=%s\\n", w, h, dpr, GEA_SAILFISH_APP_ID);`,
+    `	pumpSdlEvents();
+	g_resize_pending = false;
+	const SailfishViewport initial = readViewport();
+	publishViewport(initial, false);
+	int w = sailfish_canvas_width();
+	int h = sailfish_canvas_height();
+	const double dpr = initial.dpr;
+
+	std::fprintf(stderr, "[sailfish] init window=%dx%d canvas=%dx%d css=%dx%d dpr=%.1f app=%s\\n",
+	             initial.windowW, initial.windowH, w, h, initial.cssW, initial.cssH, dpr, GEA_SAILFISH_APP_ID);`,
+  ],
+  [
+    `		// Apply a window resize before the frame: rebuild the framebuffer +
+		// texture at the new logical size, re-derive the framework viewport,
+		// and mark every node dirty so the next refresh repaints the world.
+		if (g_resize_pending) {
+			g_resize_pending = false;
+			const int scale = sailfish_display_window_scale();
+			const int newW = g_resize_window_w / (scale > 0 ? scale : 1);
+			const int newH = g_resize_window_h / (scale > 0 ? scale : 1);
+			if (sailfish_display_resize(newW, newH)) {
+				w = sailfish_canvas_width();
+				h = sailfish_canvas_height();
+				gea::embedded::ui::setViewportMetrics(w, h, dpr);
+				gea::embedded::ui::Document::setPreferredMountSize(w, h);
+				const int count = tree.nodeCount();
+				for (int id = 0; id < count; ++id) markNodeFullyDirty(tree, id);
+				std::fprintf(stderr, "[sailfish] resized to %dx%d (window %dx%d)\\n",
+				             w, h, g_resize_window_w, g_resize_window_h);
+			}
+		}`,
+    `		// Window pixels, canvas, and CSS viewport stay on one conversion.
+		// Poll the drawable: a Wayland size event can be missed or stale.
+		{
+			const SailfishViewport next = readViewport();
+			if (g_resize_pending || next.canvasW != w || next.canvasH != h) {
+				g_resize_pending = false;
+				publishViewport(next, true);
+				w = sailfish_canvas_width();
+				h = sailfish_canvas_height();
+			}
+		}`,
   ],
 ])
 

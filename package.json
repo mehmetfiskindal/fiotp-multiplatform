@@ -4,11 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-<<<<<<< HEAD
-    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs && node patches/geastack-sailfish-build.mjs",
-=======
-    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs && node patches/geastack-android-build.mjs",
->>>>>>> 03e712a13f7c062c829bba3adf38ae72528957c8
+    "postinstall": "node patches/geastack-apple-macos-password.mjs && node patches/geastack-apple-ios-build.mjs && node patches/geastack-linux-build.mjs && node patches/geastack-sailfish-build.mjs && node patches/geastack-android-build.mjs",
     "check": "tsc --noEmit",
     "test": "node --experimental-strip-types tests/otp.test.ts && npx tsx tests/pagination.test.ts && sh scripts/test-native.sh && sh scripts/test-android-host.sh",
     "dev": "gea dev",
@@ -30,13 +26,9 @@
     "@geastack/targets": "^0.1.77"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "@geajs/vite-plugin": "^1.4.1",
-    "@geastack/linux": "^0.1.1",
-=======
     "@geastack/android": "github:geastack/android#bdc956af1212448526ba9d92f7666e20a745bc51",
-    "@geastack/linux": "^0.1.0",
->>>>>>> 03e712a13f7c062c829bba3adf38ae72528957c8
+    "@geastack/linux": "^0.1.1",
     "@geastack/windows": "^0.1.0",
     "typescript": "latest",
     "vite": "latest"
