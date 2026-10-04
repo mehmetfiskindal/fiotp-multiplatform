@@ -2,7 +2,7 @@
 
 FiOTP is an offline TOTP and HOTP authenticator for macOS, iOS, Linux, Windows, and Android. It stores accounts in a local vault encrypted with AES-256-GCM and generates verification codes on-device.
 
-The application is built with [GeaStack](https://www.npmjs.com/package/@geastack/cli) using TypeScript and TSX. GeaStack compiles the interface from `src/index.tsx`. Platform host bridges provide native file, cryptography, clipboard, and camera integration where supported. The project also includes a separate native Android application under `android/`, implemented in Kotlin and Jetpack Compose. It shares this repository and the FiOTP vault format; it does not use the GeaStack Android WebView target. The web target remains an interface preview.
+The application is built with [GeaStack](https://www.npmjs.com/package/@geastack/cli) using TypeScript and TSX. GeaStack compiles the interface from `src/index.tsx`. Platform host bridges provide native file, cryptography, clipboard, and camera integration where supported. Android uses the same interface: GeaStack compiles it to C++ and the NDK, then draws each node as a real Android view. There is no WebView and no separate Kotlin UI. The web target remains an interface preview.
 
 ## Platform build requirements
 
@@ -11,7 +11,7 @@ The application is built with [GeaStack](https://www.npmjs.com/package/@geastack
 - Raspberry Pi OS Bookworm or newer and the native dependencies listed in [LINUX.md](LINUX.md) for Linux builds
 - Sailfish OS 5.1 SDK with an aarch64 target for [Sailfish builds](SAILFISH.md)
 - Windows 10/11, Visual Studio Build Tools with the MSVC C++ toolset and Windows SDK, plus LLVM `clang-cl` and `lld-link` for Windows builds
-- JDK 17 or newer and Android SDK Platform 36 for Android builds
+- JDK 17 or newer, Android SDK platform and build-tools, Android NDK, and CMake for Android builds
 
 ## Installation
 
@@ -33,9 +33,13 @@ npx gea inspect --json
 npm run build:macos  # Build the macOS application
 npm run build:windows  # Build the Windows application
 npm run run:windows   # Build and launch the Windows application
+<<<<<<< HEAD
 npm run build:android # Build the Android debug APK
 npm run build:sailfish # Build the Sailfish OS aarch64 RPM on Windows
 npm run test:android  # Run Kotlin unit tests
+=======
+npm run build:android # Build the native Android debug APK
+>>>>>>> 03e712a13f7c062c829bba3adf38ae72528957c8
 ```
 
 The macOS application is generated at `dist/macos/fiotp-gea/FiOTP.app` and can be launched with:
@@ -44,11 +48,11 @@ The macOS application is generated at `dist/macos/fiotp-gea/FiOTP.app` and can b
 open dist/macos/fiotp-gea/FiOTP.app
 ```
 
-The Android APK is generated at `android/app/build/outputs/apk/debug/app-debug.apk` and uses the package id `com.fiskindal.fiotp`. Android supports API 23 and newer. Its first build is debug-signed. The Android UI, OTP engine, vault cryptography, file selection, and QR camera flow are implemented in Kotlin; the Apple and web targets continue to use the existing TypeScript/GeaStack application.
+The Android APK is generated at `.gea-android/dist/fiotp-gea/fiotp-gea-debug.apk` and uses the package id `com.fiskindal.fiotp`. Android supports API 23 and newer. The debug build is signed with the Android debug key and defaults to version code 2 so it can replace the previous package without deleting its private files. `GEA_ANDROID_VERSION_CODE` and `GEA_ANDROID_VERSION_NAME` override that. The interface is the shared GeaStack application. The Android host stores the default encrypted vault in the app's private files as `kasa.json`, opens and exports other vault files through the system document picker, copies codes with the system clipboard, and scans QR codes with Camera2. The vault format matches the Apple, Linux, and Windows targets.
 
 The Windows target uses GeaStack's native Win32 desktop renderer. Build it on Windows with `npm run build:windows`; run it with `npm run run:windows`. The executable is generated at `dist/windows/fiotp-gea/FiOTP.exe`. The Windows host stores its default encrypted vault under `%APPDATA%\FiOTP\kasa.json`, uses native Windows file dialogs and the system clipboard, and reads and writes the same encrypted vault format as the Apple and Linux targets. Camera QR scanning is not available in the initial Windows target; add accounts with an `otpauth://` URI or enter them manually.
 
-The web target is intended for interface development and preview. It does not open or persist production vaults. Camera access and production vault workflows are available in the macOS and iOS applications.
+The web target is intended for interface development and preview. It does not open or persist production vaults. Camera access and production vault workflows are available in the macOS, iOS, and Android applications.
 
 `npm run build:macos` adds the camera usage description to the application bundle and applies an ad-hoc signature for local testing. Public distribution requires signing with a Developer ID certificate and notarization by Apple.
 
@@ -60,7 +64,7 @@ The web target is intended for interface development and preview. It does not op
 4. Select a TOTP code to copy it. For HOTP accounts, use the counter control to advance to the next code.
 5. Find accounts with search, categories, and favorites. Use **Vault & Backup** to export an encrypted backup, import a backup, or change the master password.
 
-On macOS the default vault is `~/Library/Application Support/FiOTP Gea/kasa.json`; on Windows it is `%APPDATA%\FiOTP\kasa.json`. Linux uses `$XDG_DATA_HOME/fiotp/kasa.json` (or `~/.local/share/fiotp/kasa.json`). Another location can be selected in the application. The vault key is derived with PBKDF2-HMAC-SHA256. Writes are atomic, and the previous valid version is retained as a `.bak` recovery file. The vault cannot be opened without its master password, so keep the password and backups in a secure location. FiOTP locks the vault after five minutes of inactivity.
+On macOS the default vault is `~/Library/Application Support/FiOTP Gea/kasa.json`; on Windows it is `%APPDATA%\FiOTP\kasa.json`. Linux uses `$XDG_DATA_HOME/fiotp/kasa.json` (or `~/.local/share/fiotp/kasa.json`). Android keeps the default vault in the app's private files as `kasa.json`. Another location can be selected in the application. The vault key is derived with PBKDF2-HMAC-SHA256. Writes are atomic, and the previous valid version is retained as a `.bak` recovery file. The vault cannot be opened without its master password, so keep the password and backups in a secure location. FiOTP locks the vault after five minutes of inactivity.
 
 ## Project structure
 
@@ -68,10 +72,10 @@ On macOS the default vault is `~/Library/Application Support/FiOTP Gea/kasa.json
 | --- | --- |
 | `src/App.tsx`, `src/stores/` | Interface and application state |
 | `src/crypto/`, `src/services/` | OTP generation and encrypted vault operations |
-| `native/` | Apple, Linux, and Windows host integrations |
+| `native/` | Apple, Linux, Windows, and Android host integrations |
 | `windows.json` | Windows native window configuration |
-| `android/app/src/main/java/` | Native Android Compose UI, OTP, vault encryption, SAF and camera integration |
-| `patches/` | GeaStack macOS secure password field patch |
+| `native/android/` | Android vault, document picker, clipboard, and QR camera bridge |
+| `patches/` | GeaStack macOS password-field and Android build patches |
 | `tests/`, `native/fiotp_host_test.mm` | OTP and native vault tests |
 
 ## License, branding, and security

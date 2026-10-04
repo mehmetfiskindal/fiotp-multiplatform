@@ -77,7 +77,7 @@ export class VaultService {
       const defaultEnvelope = JSON.parse(this.host.invoke('vault.defaultPath')) as PathEnvelope
       this.path = defaultEnvelope.data.path
     }
-    if (this.host.platform === 'ios') {
+    if (this.host.platform === 'ios' || this.host.platform === 'android') {
       const discovered = JSON.parse(this.host.invoke('vault.discover', { preferredPath: this.path })) as StatusEnvelope
       this.path = discovered.data.path
       this.rememberPath(this.path)
